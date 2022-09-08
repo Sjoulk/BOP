@@ -43,7 +43,7 @@ class Virus():
             "\n\nRecovered: 0", xy=[3 * np.pi / 2,1], ha="center", va="top", color=GREEN
         )
 
-        #create member variables
+        # create member variables
         self.day = 0
         self.total_num_infected = 0
         self.num_currently_infected = 0
@@ -51,4 +51,16 @@ class Virus():
         self.num_deaths = 0
         self.r0 = params["r0"]
         self.percent_mild = params["percent_mild"]
+        self.percent_severe = params["percent_severe"]
+        self.fatality_rate = params["fatality_rate"]
+        self.serial_interval = params["serial_interval"]
+
+        self.mild_fast = params["incubation"] + params["mild_recovery"][0]
+        self.mild_slow = params["incubation"] + params["mild_recovery"][1]
+        self.severe_fast = params["incubation"] + params["severe_recovery"][0]
+        self.severe_slow = params["incubation"] + params["severe_recovery"][1]
+        self.death_fast = params["incubation"] + params["severe_death"][0]
+        self.death_slow = params["incubation"] + params["severe_death"][1]
+
+        self.mild = {i: {"thetas": [], "rs": []} for i in range(self.mild_fast, 365)}
         
