@@ -71,6 +71,8 @@ class Virus():
 
         self.exposed_before = 0
         self.exposed_after = 1
+
+        self.initial_population()
         
 
     def initial_population(self):
@@ -175,7 +177,7 @@ class Virus():
             recovery_day = np.random.randint(low, high)
             mild_theta = self.thetas[mild]
             mild_r = self.rs[mild]
-            self.mild[recovery_day]["thetas"].append(death_theta)
+            self.mild[recovery_day]["thetas"].append(mild_theta)
             self.mild[recovery_day]["rs"].append(mild_r)
         low = self.day + self.severe_fast
         high = self.day + self.severe_slow
@@ -219,7 +221,7 @@ class Virus():
     def update_text(self):
         self.day_text.set_text("Day {}".format(self.day))
         self.infected_text.set_text("Infected: {}".format(self.num_currently_infected))
-        self.deaths_text.set_text("\nDeaths: {}".format(self.num_deaths))
+        self.death_text.set_text("\nDeaths: {}".format(self.num_deaths))
         self.recovered_text.set_text("\n\nRecovered: {}".format(self.num_recovered))
 
     def gen(self):
