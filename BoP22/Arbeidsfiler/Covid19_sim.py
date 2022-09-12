@@ -1,3 +1,4 @@
+import re
 import matplotlib.pyplot as plt
 import matplotlib.animation as ani
 import numpy as np
@@ -105,7 +106,44 @@ class Virus():
             )
             thetas = [self.thetas[i] for i in self.new_infected_indices]
             rs = [self.rs[i] for i in self.new_infected_indices]
+            self.anim.event_source.stop()
+            if len(self.new_infected_indices) > 24:
+                size_list = round(len(self.new_infected_indices) / 24)
+                theta_chunks = list(self.chunks(thetas, size_list))
+                r_chunks = list(self.chunks(thetas, size_list))
+                self.anim2 = ani.FuncAnimation(
+                    self.fig,
+                    self.one_by_one,
+                    interval=50,
+                    frames=len(theta_chunks),
+                    fargs=(theta_chunks, r_chunks, RED)
+                )
+            else:
+                self.anim2 = ani.FuncAnimation(
+                    self.fig,
+                    self.one_by_one,
+                    interval=50,
+                    frames=len(thetas),
+                    fargs=(thetas, rs, RED)
+                )
+
+            self.assign_symptoms()
+
         self.day += 1
+        
+        self.update_status()
+        self.update_text()
+
+    def one_by_one(self, i, thetas, rs, color):
+        self.axes.scatter(thetas[i], rs[i], s=5, color=color)
+        if i == (len(thetas) - 1):
+            self.anim2.event_source.stop()
+            self.anim.event_source.start()
+
+    def chunks(self, a_list, n):
+        for i in range(0, len(a_list), n):
+            yield a_list[i:i + n]
+
 
     def assign_symptoms(self):
         num_mild = round(self.percent_mild * self.num_new_infected)
@@ -139,3 +177,68 @@ class Virus():
             mild_r = self.rs[mild]
             self.mild[recovery_day]["thetas"].append(death_theta)
             self.mild[recovery_day]["rs"].append(mild_r)
+        low = self.day + self.severe_fast
+        high = self.day + self.severe_slow
+        for recovery in self.severe_indices:
+            recovery_day = np.random.randint(low, high)
+            recovery_theta = self.thetas[recovery]
+            recovery_r = self.rs[recovery]
+            self.severe["recovery"][recovery_day]["thetas"].append(recovery_theta)
+            self.severe["recovery"][recovery_day]["rs"].append(recovery_r)
+        low = self.day + self.death_fast
+        high = self.day + self.death_slow
+        for death in self.death_indeces:
+            death_day = np.random.randint(low, high)
+            death_theta = self.thetas[death]
+            death_r = self.rs[death]
+            self.severe["death"][death_day]["thetas"].append(death_theta)
+            self.severe["death"][death_day]["rs"].append(death_r)
+    
+
+    def update_status(self):
+        if self.day >= self.mild_fast:
+            mild_thetas = self.mild[self.day]["thetas"]
+            mild_rs = self.mild[self.day]["rs"]
+            self.axes.scatter(mild_thetas, mild_rs, s=5, color=GREEN)
+            self.num_recovered += len(mild_thetas)
+            self.num_currently_infected -= len(mild_thetas)
+        if self.day >= self.severe_fast:
+            rec_thetas =  self.severe["recovery"][self.day]["thetas"]
+            rec_rs = self.severe["recovery"][self.day]["rs"]
+            self.axes.scatter(rec_thetas, rec_rs, s=5, color=GREEN)
+            self.num_recovered += len(rec_thetas)
+            self.num_currently_infected  -= len(rec_thetas)
+        if self.day >= self.death_fast:
+            death_thetas = self.severe["death"][self.day]["thetas"]
+            death_rs = self.severe["death"][self.day]["rs"]
+            self.axes.scatter(death_thetas, death_rs, s=5, color=BLACK)
+            self.num_deaths += len(death_thetas)
+            self.num_currently_infected -= len(death_thetas)
+
+
+    def update_text(self):
+        self.day_text.set_text("Day {}".format(self.day))
+        self.infected_text.set_text("Infected: {}".format(self.num_currently_infected))
+        self.deaths_text.set_text("\nDeaths: {}".format(self.num_deaths))
+        self.recovered_text.set_text("\n\nRecovered: {}".format(self.num_recovered))
+
+    def gen(self):
+        while self.num_deaths + self.num_recovered < self.total_num_infected:
+            yield
+
+    def animate(self):
+        self.anim = ani.FuncAnimation(
+            self.fig,
+            self.spread_virus,
+            frames=self.gen,
+            repeat=True
+        )
+
+def main():
+    coronavirus = Virus(COVID19_PARAMS)
+    coronavirus.animate()
+    plt.show()
+
+
+if __name__ == '__main__':
+    main()
